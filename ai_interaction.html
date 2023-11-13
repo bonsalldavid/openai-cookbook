@@ -55,12 +55,14 @@
     <div class="container">
         <h1>AI Interaction Form</h1>
 
-        <form id="aiForm" method="post">
+        <form id="aiForm" method="post" enctype="multipart/form-data">
             <input type="text" id="assistantName" name="assistantName" placeholder="Assistant Name">
             <input type="text" id="assistantInstructions" name="assistantInstructions" placeholder="Assistant Instructions">
             <input type="text" id="userInput" name="userInput" placeholder="Your question">
             <label for="codeInterpreter">Code Interpreter:</label>
             <input type="checkbox" id="codeInterpreter" name="codeInterpreter">
+            <input type="submit" value="Submit">
+            <input type="file" id="fileUpload" name="fileUpload">
             <input type="submit" value="Submit">
         </form>
 
@@ -71,33 +73,20 @@
     </div>
 
     <script>
-        document.getElementById("aiForm").onsubmit = function(event) {
-            event.preventDefault();
-        
-            
-            var assistantName = document.getElementById("assistantName").value;
-            var assistantInstructions = document.getElementById("assistantInstructions").value;
-            var userInput = document.getElementById("userInput").value;
-            var codeInterpreter = document.getElementById("codeInterpreter").checked;
-        
-            var formData = new URLSearchParams();
-            formData.append('assistantName', assistantName);
-            formData.append('assistantInstructions', assistantInstructions);
-            formData.append('userInput', userInput);
-            formData.append('codeInterpreter', codeInterpreter);
-        
-            fetch('/submit', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById("aiResponse").innerText = data;
-            });
-        };
+    document.getElementById("aiForm").onsubmit = function(event) {
+        event.preventDefault();
+
+        var formData = new FormData(document.getElementById("aiForm"));
+
+        fetch('/submit', {
+           method: 'POST',
+         body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+        document.getElementById("aiResponse").innerText = data;
+        });
+    }; 
         </script>
 </body>
 </html>

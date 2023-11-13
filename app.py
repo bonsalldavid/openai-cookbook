@@ -5,6 +5,10 @@ from openai import OpenAI
 import time
 
 
+from werkzeug.utils import secure_filename
+import os
+
+
 #Needs Debugging to turn Debugging on :-( ! 
 #if __name__ == '__main__':
 #    app.run(debug=False)
@@ -64,27 +68,47 @@ def get_response(thread):
 current_thread = None  # Global variable to store the current thread
 
 
-def create_thread_and_run(user_input, assistant_name, assistant_instructions, use_code_interpreter):
+def create_thread_and_run(user_input, assistant_name, assistant_instructions, use_code_interpreter, file_id=None):
     global current_thread
     global MATH_ASSISTANT_ID
 
-   # Update assistant if necessary
-    if assistant_name or assistant_instructions or use_code_interpreter:
+    # Update assistant if necessary
+    if assistant_name or assistant_instructions or use_code_interpreter or file_id:
         tools = [{"type": "code_interpreter"}] if use_code_interpreter else []
+        if file_id:
+            tools.append({"type": "retrieval"})
         assistant = client.beta.assistants.update(
             MATH_ASSISTANT_ID,
             name=assistant_name,
             instructions=assistant_instructions,
-            tools=tools
+            tools=tools,
+            file_ids=[file_id] if file_id else None
         )
         MATH_ASSISTANT_ID = assistant.id
-
-
 
     if current_thread is None:
         current_thread = client.beta.threads.create()
     run = submit_message(MATH_ASSISTANT_ID, current_thread, user_input)
     return current_thread, run
+
+
+##### Upload file
+
+def upload_file_to_openai():
+    if 'file' not in request.files:
+        return None  # or handle error
+
+    file = request.files['file']
+    if file.filename == '':
+        return None  # or handle error
+
+    uploaded_file = client.files.create(
+        file=file.read(),
+        purpose="assistants"
+    )
+    return uploaded_file.id
+
+
 
 # Pretty printing helper
 def pretty_print(messages):
@@ -115,10 +139,25 @@ def submit():
     assistant_instructions = request.form.get('assistantInstructions', '')
     use_code_interpreter = 'codeInterpreter' in request.form
 
+    # Handling file upload
+    file = request.files.get('fileUpload')
+    file_id = None
+    if file:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join('uploads', filename)
+        file.save(file_path)
+
+        # Upload the file to OpenAI
+        uploaded_file = client.files.create(
+            file=open(file_path, "rb"),
+            purpose="assistants",
+        )
+        file_id = uploaded_file.id
+
     # Debugging print statement
     print("Code Interpreter Enabled:", use_code_interpreter)
 
-    thread, run = create_thread_and_run(user_input, assistant_name, assistant_instructions, use_code_interpreter)
+    thread, run = create_thread_and_run(user_input, assistant_name, assistant_instructions, use_code_interpreter, file_id)
     run = wait_on_run(run, thread)
     messages = get_response(thread)
 
@@ -137,6 +176,7 @@ def submit():
                 response += f"\nCode Interpreter Input:\n{code_input}\nOutput:\n{code_output}"
 
     return jsonify(response)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
