@@ -9,23 +9,68 @@
  
 > ✨ Navigate at [cookbook.openai.com](https://cookbook.openai.com)
 
-Example code and guides for accomplishing common tasks with the [OpenAI API](https://platform.openai.com/docs/introduction). To run these examples, you'll need an OpenAI account and associated API key ([create a free account here](https://beta.openai.com/signup)).
+# OpenAI Cookbook Web App Integration
 
-Most code examples are written in Python, though the concepts can be applied in any language.
+This document outlines the integration of a simple web application with the OpenAI Cookbook repository. The web application allows users to interact with an AI assistant, send queries, and receive responses. It also includes the functionality to use a code interpreter tool.
 
-For other useful tools, guides and courses, check out these [related resources from around the web](https://cookbook.openai.com/related_resources).
+## PLACE HOLDER: TODO as a kindness
+ pip install -r requirements.txt 
 
-## Contributing
+## Features
 
-The OpenAI Cookbook is a community-driven resource. Whether you're submitting an idea, fixing a typo, adding a new guide, or improving an existing one, your contributions are greatly appreciated!
+- **AI Interaction Form**: Users can submit questions to the AI assistant.
+- **Dynamic Assistant Configuration**: Users can set the assistant's name and instructions.
+- **Code Interpreter**: An optional code interpreter tool can be enabled for processing code-related queries.
 
-Before contributing, read through the existing issues and pull requests to see if someone else is already working on something similar. That way you can avoid duplicating efforts.
+## ToDo
 
-If there are examples or guides you'd like to see, feel free to suggest them on the [issues page](https://github.com/openai/openai-cookbook/issues).
+- **Add functionality to load in files**: Explore options for file input and processing within the web application.
+- **Unit Testing**: Implement unit tests to ensure reliability and accuracy of the application.
+- **Explore Integration with Memory and Storage Solutions**: Investigate how the application can integrate with services like Pinecone for enhanced memory and storage capabilities.
 
-If you'd like to contribute new content, make sure to read through our [contribution guidelines](/CONTRIBUTING.md). We welcome high-quality submissions of new examples and guides, as long as they meet our criteria and fit within the scope of the cookbook.
+## Setup and Installation
 
-The contents of this repo are automatically rendered into [cookbook.openai.com](https://cookbook.openai.com) based on [registry.yaml](/registry.yaml).
+1. **Clone the Repository**: Ensure you have a fork or clone of the OpenAI Cookbook repository.
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=468576060&machine=basicLinux32gb&location=EastUs)
+2. **Install Dependencies**:
+   ***CAUTION: ***
+   - Flask: `pip install flask`
+   - python-dotenv: `pip install python-dotenv`
+   - OpenAI: `pip install openai`
+   - Authorisation: `pip install Flask-HTTPAuth`
+
+
+
+3. **Environment Variables**: Set up your `.env` file with the necessary API keys and configurations. (and check set to .gitignore)
+
+## Running the Application
+
+1. **Start the Flask Server**: Run `app.py` to start the Flask server.
+2. **Access the Web App**: Open the provided local URL in your browser to interact with the application.
+
+## Web Application Usage
+
+- **Submitting Queries**: Enter your question in the 'Your question' field.
+- **Setting Assistant Properties**:
+  - *Assistant Name*: Optionally set a name for the assistant.
+  - *Assistant Instructions*: Optionally provide specific instructions for the assistant.
+- **Enabling Code Interpreter**: Check the 'Code Interpreter' box to enable the code interpreter tool for the query.
+
+## Backend Functionality
+
+- **Flask Server**: Handles HTTP requests and communicates with the OpenAI API.
+- **AI Interaction**: The server processes user input, interacts with the OpenAI API, and returns the AI's response.
+- **Code Interpreter**: When enabled, the server uses the code interpreter tool to process code-related queries and returns both the code and its output.
+
+## Troubleshooting
+
+- Ensure all dependencies are correctly installed.
+- Check the Flask server logs for any errors or issues.
+- Verify that the `.env` file is correctly set up with your API keys.
+
+## Future Enhancements
+
+- Improved error handling and user feedback.
+- Additional customization options for the AI assistant.
+- Enhanced UI/UX design for a better user experience.
 
