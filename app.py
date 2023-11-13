@@ -68,21 +68,19 @@ def get_response(thread):
 current_thread = None  # Global variable to store the current thread
 
 
-def create_thread_and_run(user_input, assistant_name, assistant_instructions, use_code_interpreter, file_id=None):
+def create_thread_and_run(user_input, assistant_name, assistant_instructions, use_code_interpreter, file_ids):
     global current_thread
     global MATH_ASSISTANT_ID
 
     # Update assistant if necessary
-    if assistant_name or assistant_instructions or use_code_interpreter or file_id:
+    if assistant_name or assistant_instructions or use_code_interpreter or file_ids:
         tools = [{"type": "code_interpreter"}] if use_code_interpreter else []
-        if file_id:
-            tools.append({"type": "retrieval"})
         assistant = client.beta.assistants.update(
             MATH_ASSISTANT_ID,
             name=assistant_name,
             instructions=assistant_instructions,
             tools=tools,
-            file_ids=[file_id] if file_id else None
+            file_ids=file_ids,
         )
         MATH_ASSISTANT_ID = assistant.id
 
@@ -139,25 +137,27 @@ def submit():
     assistant_instructions = request.form.get('assistantInstructions', '')
     use_code_interpreter = 'codeInterpreter' in request.form
 
-    # Handling file upload
-    file = request.files.get('fileUpload')
-    file_id = None
-    if file:
-        filename = secure_filename(file.filename)
-        file_path = os.path.join('uploads', filename)
-        file.save(file_path)
+    # Handling multiple file uploads
+    files = request.files.getlist('fileUpload')
+    file_ids = []
+    for file in files:
+        if file:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join('uploads', filename)
+            file.save(file_path)
 
-        # Upload the file to OpenAI
-        uploaded_file = client.files.create(
-            file=open(file_path, "rb"),
-            purpose="assistants",
-        )
-        file_id = uploaded_file.id
+            # Upload the file to OpenAI
+            uploaded_file = client.files.create(
+                file=open(file_path, "rb"),
+                purpose="assistants",
+            )
+            file_ids.append(uploaded_file.id)
 
     # Debugging print statement
     print("Code Interpreter Enabled:", use_code_interpreter)
 
-    thread, run = create_thread_and_run(user_input, assistant_name, assistant_instructions, use_code_interpreter, file_id)
+    # Pass file_ids to create_thread_and_run
+    thread, run = create_thread_and_run(user_input, assistant_name, assistant_instructions, use_code_interpreter, file_ids)
     run = wait_on_run(run, thread)
     messages = get_response(thread)
 

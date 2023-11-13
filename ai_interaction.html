@@ -62,7 +62,7 @@
             <label for="codeInterpreter">Code Interpreter:</label>
             <input type="checkbox" id="codeInterpreter" name="codeInterpreter">
             <input type="submit" value="Submit">
-            <input type="file" id="fileUpload" name="fileUpload">
+            <input type="file" id="fileUpload" name="fileUpload" multiple>
             <input type="submit" value="Submit">
         </form>
 
@@ -73,20 +73,36 @@
     </div>
 
     <script>
-    document.getElementById("aiForm").onsubmit = function(event) {
-        event.preventDefault();
+  document.getElementById("aiForm").onsubmit = function(event) {
+    event.preventDefault();
 
-        var formData = new FormData(document.getElementById("aiForm"));
+    var assistantName = document.getElementById("assistantName").value;
+    var assistantInstructions = document.getElementById("assistantInstructions").value;
+    var userInput = document.getElementById("userInput").value;
+    var codeInterpreter = document.getElementById("codeInterpreter").checked;
+    var files = document.getElementById("fileUpload").files;
 
-        fetch('/submit', {
-           method: 'POST',
-         body: formData,
-        })
-        .then(response => response.json())
-        .then(data => {
+    var formData = new FormData();
+    formData.append('assistantName', assistantName);
+    formData.append('assistantInstructions', assistantInstructions);
+    formData.append('userInput', userInput);
+    formData.append('codeInterpreter', codeInterpreter);
+
+    // Append files to formData
+    for (var i = 0; i < files.length; i++) {
+        formData.append('fileUpload', files[i]);
+    }
+
+    fetch('/submit', {
+        method: 'POST',
+        body: formData,
+        // Do not set Content-Type header for FormData
+    })
+    .then(response => response.json())
+    .then(data => {
         document.getElementById("aiResponse").innerText = data;
-        });
-    }; 
+    });
+};
         </script>
 </body>
 </html>
