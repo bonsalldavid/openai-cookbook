@@ -8,7 +8,7 @@ import os
 from flask import Flask, send_from_directory, request, jsonify, flash, redirect, url_for, render_template
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from github import Github
-
+import subprocess
 
 g = Github(os.getenv('GITHUB'))
 
@@ -270,20 +270,32 @@ def confirm_commit():
     confirm = data.get('confirm')
 
     if confirm and commit_message:
-        repo = g.get_repo("bonsalldavid/openai-cookbook")
-        pull_latest_changes(repo)
-        push_changes(repo, commit_message)
+        pull_result = pull_latest_changes()
+        if pull_result:
+            return jsonify({"error": pull_result}), 500
+
+        push_result = push_changes(commit_message)
+        if push_result.startswith("Error"):
+            return jsonify({"error": push_result}), 500
+
         return jsonify({"message": "Changes have been committed and pushed to the repository."})
     else:
         return jsonify({"message": "Commit cancelled."})
 
-def pull_latest_changes(repo):
-    # Implement the logic to pull changes using GitHub API
-    pass
+def pull_latest_changes():
+    try:
+        subprocess.check_call(['git', 'pull', 'origin', 'main'])
+    except subprocess.CalledProcessError as e:
+        return f"Error pulling changes: {e}"
 
-def push_changes(repo, commit_message):
-    # Implement the logic to push changes using GitHub API
-    pass
+def push_changes(commit_message):
+    try:
+        subprocess.check_call(['git', 'add', '.'])
+        subprocess.check_call(['git', 'commit', '-m', commit_message])
+        subprocess.check_call(['git', 'push', 'origin', 'main'])
+        return "Changes committed and pushed successfully."
+    except subprocess.CalledProcessError as e:
+        return f"Error pushing changes: {e}"
 
 
 if __name__ == '__main__':

@@ -146,10 +146,15 @@
         })
         .then(response => response.json())
         .then(data => {
-            // Handle the final response here
-            // E.g., display a success message
+            if (data.error) {
+                alert("Error: " + data.error);
+            } else {
+                alert(data.message);
+            }
         });
     }
+</script>
+
 </script>
     
 
