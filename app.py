@@ -1,12 +1,15 @@
-from flask import Flask, send_from_directory, request, jsonify
+
 from dotenv import load_dotenv
 import json
 from openai import OpenAI
 import time
-
-
 from werkzeug.utils import secure_filename
 import os
+from flask import Flask, send_from_directory, request, jsonify, flash, redirect, url_for, render_template
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
+
+
+
 
 
 #Needs Debugging to turn Debugging on :-( ! 
@@ -15,6 +18,56 @@ import os
 
 
 app = Flask(__name__)
+
+# Secret key for sessions
+app.secret_key = os.getenv('SECRET_KEY')
+
+# Flask-Login setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+# User class
+class User(UserMixin):
+    def __init__(self, id, username, password):
+        self.id = id
+        self.username = username
+        self.password = password
+
+# Now get the user details from the environment variables
+users = {
+    os.getenv('USER1_NAME'): {'password': os.getenv('USER1_PASSWORD')},
+    os.getenv('USER2_NAME'): {'password': os.getenv('USER2_PASSWORD')}
+}
+
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    user_info = users.get(user_id)
+    if user_info:
+        return User(id=user_id, username=user_id, password=user_info['password'])
+    return None
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user_info = users.get(username)
+        
+        if user_info and user_info['password'] == password:
+            user = User(id=username, username=username, password=password)
+            login_user(user)
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 load_dotenv()
 
@@ -127,8 +180,11 @@ def wait_on_run(run, thread):
     return run
 
 @app.route('/')
+@login_required
 def index():
-        return send_from_directory('.', 'ai_interaction.html')
+    return render_template('ai_interaction.html')
+
+
 
 @app.route('/submit', methods=['POST'])
 def submit():
