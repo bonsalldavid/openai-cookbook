@@ -65,6 +65,18 @@
             <input type="file" id="fileUpload" name="fileUpload" multiple>
             <input type="submit" value="Submit">
         </form>
+        
+        <form id="changeRequestForm">
+            <input type="text" id="changeRequest" placeholder="Describe your change request">
+            <button type="submit">Make Changes to Repo</button>
+        </form>
+        
+        <!-- Add a section for confirmation and commit message -->
+        <div id="confirmationSection" style="display:none;">
+            <p id="changeDetails"></p>
+            <input type="text" id="commitMessage" placeholder="Enter commit message">
+            <button onclick="confirmCommit()">Confirm and Commit</button>
+        </div>
 
 
         <div id="aiResponse">
@@ -104,5 +116,42 @@
     });
 };
         </script>
+<script>
+    document.getElementById("changeRequestForm").onsubmit = function(event) {
+        event.preventDefault();
+        var changeRequest = document.getElementById("changeRequest").value;
+    
+        fetch('/request-change', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ request: changeRequest })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("changeDetails").innerText = data.message;
+            document.getElementById("confirmationSection").style.display = "block";
+        });
+    };
+
+    function confirmCommit() {
+        var commitMessage = document.getElementById("commitMessage").value;
+        fetch('/confirm-commit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ confirm: true, commit_message: commitMessage })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Handle the final response here
+            // E.g., display a success message
+        });
+    }
+</script>
+    
+
 </body>
 </html>

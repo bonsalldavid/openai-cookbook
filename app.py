@@ -7,7 +7,10 @@ from werkzeug.utils import secure_filename
 import os
 from flask import Flask, send_from_directory, request, jsonify, flash, redirect, url_for, render_template
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
+from github import Github
 
+
+g = Github(os.getenv('GITHUB'))
 
 
 
@@ -232,6 +235,55 @@ def submit():
                 response += f"\nCode Interpreter Input:\n{code_input}\nOutput:\n{code_output}"
 
     return jsonify(response)
+
+### Github
+
+@app.route('/request-change', methods=['POST'])
+def request_change():
+    data = request.json
+    change_request = data.get('request')
+
+    if not change_request:
+        return jsonify({"error": "No request provided"}), 400
+
+    # Process the change request
+    generated_content = "Generated content based on request: " + change_request
+    proposed_changes = {
+        "file_name": "new_file.txt",
+        "content": generated_content
+    }
+
+    file_path = save_proposed_changes(proposed_changes)
+    return jsonify({"message": "Changes prepared. Please confirm and provide a commit message."})
+
+def save_proposed_changes(changes):
+    file_path = f"app_changes/{changes['file_name']}"
+    with open(file_path, "w") as file:
+        file.write(changes['content'])
+    return file_path
+
+
+@app.route('/confirm-commit', methods=['POST'])
+def confirm_commit():
+    data = request.json
+    commit_message = data.get('commit_message')
+    confirm = data.get('confirm')
+
+    if confirm and commit_message:
+        repo = g.get_repo("bonsalldavid/openai-cookbook")
+        pull_latest_changes(repo)
+        push_changes(repo, commit_message)
+        return jsonify({"message": "Changes have been committed and pushed to the repository."})
+    else:
+        return jsonify({"message": "Commit cancelled."})
+
+def pull_latest_changes(repo):
+    # Implement the logic to pull changes using GitHub API
+    pass
+
+def push_changes(repo, commit_message):
+    # Implement the logic to push changes using GitHub API
+    pass
 
 
 if __name__ == '__main__':
