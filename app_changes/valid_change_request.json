@@ -1,0 +1,15 @@
+{
+    "ID_main": "1",
+    "User_request": "Add a new feature",
+    "Summary": "Adding a new feature to improve functionality",
+    "Change Entries": [
+        {
+            "Id": "1",
+            "Type": "NEWFILE",
+            "Filelocation": "path/to/new_file.py",
+            "Content": "print('Hello World')",
+            "Line_number": "",
+            "Description": "Create a new file with a basic print statement"
+        }
+    ]
+}

@@ -9,8 +9,16 @@ from flask import Flask, send_from_directory, request, jsonify, flash, redirect,
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from github import Github
 import subprocess
+from pydantic import BaseModel
+from langchain.llms import OpenAI as LangChainOpenAI
+
+# Initialize LangChain with your API key
+llm = LangChainOpenAI(api_key="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-api-key")
+
+
 
 g = Github(os.getenv('GITHUB'))
+# Initialize LangChain with your API key
 
 
 
@@ -296,6 +304,103 @@ def push_changes(commit_message):
         return "Changes committed and pushed successfully."
     except subprocess.CalledProcessError as e:
         return f"Error pushing changes: {e}"
+
+# Define JSON Structure
+class ChangeEntry(BaseModel):
+    id: int
+    type: str
+    file_location: str
+    content: str
+    line_number: str
+    description: str
+
+class ChangeRequest(BaseModel):
+    id_main: str
+    user_request: str
+    summary: str
+    changes: list[ChangeEntry]
+
+# Analyze User Instructions
+def analyze_instructions(user_description: str, llm: LangChainOpenAI) -> ChangeRequest:
+    prompt = "Categorize the following change request into structured data: " + user_description
+    interpreted_description = llm.complete(prompt)
+
+    # Process the interpreted description to extract structured data
+    # Assuming the output is a list of dictionaries representing changes
+    changes = [ChangeEntry(**change) for change in interpreted_description]
+
+    return ChangeRequest(id_main="1", user_request=user_description, summary="", changes=changes)
+
+# Interactive Clarification
+def interactive_clarification(details: ChangeRequest, llm: LangChainOpenAI) -> ChangeRequest:
+    for change in details.changes:
+        if not change.file_location:  # Example condition
+            question = f"Where should the change '{change.id}' be applied?"
+            change.file_location = llm.complete(question)
+
+    return details
+
+# Generate JSON Structure
+def generate_json_structure(details: ChangeRequest) -> str:
+    return details.json()
+
+# Validate JSON
+def validate_json(json_data: str, llm: LangChainOpenAI) -> bool:
+    try:
+        data = json.loads(json_data)
+        # Additional validation logic can be added here
+        return True
+    except json.JSONDecodeError:
+        return False
+
+# Return JSON
+def return_json(user_description: str, llm: LangChainOpenAI) -> str:
+    details = analyze_instructions(user_description, llm)
+    details = interactive_clarification(details, llm)
+    json_structure = generate_json_structure(details)
+    if validate_json(json_structure, llm):
+        return json_structure
+    else:
+        return "Invalid JSON structure."
+    
+
+
+# Existing Code Integration
+def parse_and_validate_json(json_data):
+    try:
+        data = json.loads(json_data)
+
+        # Validate main level structure
+        if not all(key in data for key in ["id_main", "user_request", "summary"]):
+            return "Invalid JSON structure: Missing main level keys."
+
+        # Validate each change entry
+        for entry in data.get("changes", []):
+            required_keys = ["id", "type", "file_location", "content", "line_number", "description"]
+            if not all(key in entry for key in required_keys):
+                return f"Invalid JSON structure in change entry: {entry.get('id', 'Unknown')}"
+
+        return data
+
+    except json.JSONDecodeError:
+        return "Invalid JSON format."
+
+
+
+
+ # Temporary testing block
+result = parse_and_validate_json("app_changes/valid_change_request.json")
+if isinstance(result, dict):
+    print("Valid JSON:", result)
+else:
+    print("Error:", result)
+
+result = parse_and_validate_json("app_changes/invalid_change_request.json")
+if isinstance(result, dict):
+    print("Valid JSON:", result)
+else:
+    print("Error:", result)
+   
 
 
 if __name__ == '__main__':
